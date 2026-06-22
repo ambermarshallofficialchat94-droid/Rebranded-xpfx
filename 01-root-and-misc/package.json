@@ -1,0 +1,17 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "start": "pnpm --filter @workspace/api-server start",
+    "dev": "pnpm --filter @workspace/api-server dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "install": "pnpm install --no-frozen-lockfile"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2",
+    "prettier": "^3.8.1"
+  }
+}

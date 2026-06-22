@@ -1,0 +1,49 @@
+# =============================================================================
+# Render deployment configuration — XpressPro FX API Server
+# =============================================================================
+# This file is read exclusively by Render.com. It does not affect Railway,
+# VPS, Vercel, or local dev.
+#
+# Required env vars to set in the Render dashboard (not committed here):
+#   PORT             — Render injects this automatically; confirm app reads process.env.PORT ✓
+#   NODE_ENV         — set to "production"
+#   SESSION_SECRET   — strong random string (node -e "console.log(require('crypto').randomBytes(64).toString('base64'))")
+#   DATABASE_URL     — PostgreSQL connection string (Render Postgres, Neon, Supabase, etc.)
+#   ADMIN_EMAIL      — admin portal login email
+#   ADMIN_PASSWORD   — admin portal login password
+#   ALLOWED_ORIGINS  — comma-separated frontend origins, e.g. https://app.yourdomain.com
+#
+# Optional (platform degrades gracefully without these):
+#   SENDGRID_API_KEY, SMTP_HOST/PORT/USER/PASS/FROM
+#   ALCHEMY_API_KEY, INFURA_API_KEY
+#   MOONPAY_API_KEY, MOONPAY_SECRET_KEY, MOONPAY_WEBHOOK_SECRET
+#   COINBASE_API_KEY, COINBASE_API_SECRET, COINBASE_WEBHOOK_SECRET
+#   AI_INTEGRATIONS_OPENAI_API_KEY, AI_INTEGRATIONS_OPENAI_BASE_URL
+#   LOG_LEVEL (default: info)
+# =============================================================================
+
+services:
+  - type: web
+    name: xpressfx-api
+    runtime: node
+    region: oregon
+    plan: starter
+
+    buildCommand: >-
+      corepack enable &&
+      corepack prepare pnpm@9.15.4 --activate &&
+      pnpm install --frozen-lockfile &&
+      node scripts/predeploy.mjs --skip-env-check &&
+      pnpm --filter @workspace/api-server build
+
+    startCommand: node artifacts/api-server/dist/index.mjs
+
+    healthCheckPath: /healthz
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      # PORT is injected automatically by Render — do not set it here.
+      # The app reads process.env.PORT via assertRequiredEnv() in src/lib/env.ts.

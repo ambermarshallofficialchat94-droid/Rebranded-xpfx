@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@9.15.4 --activate",
+  "pnpm install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  "node scripts/predeploy.mjs --skip-env-check",
+  "pnpm --filter @workspace/api-server build"
+]
+
+[start]
+cmd = "node artifacts/api-server/dist/index.mjs"

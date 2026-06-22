@@ -1,0 +1,48 @@
+modules = ["nodejs-20", "web", "bash", "postgresql-16"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[[ports]]
+localPort = 3000
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
+[[ports]]
+localPort = 5174
+externalPort = 3001
+
+[[ports]]
+localPort = 5175
+externalPort = 3003
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 25580
+externalPort = 3002
+
+[[ports]]
+localPort = 25849
+externalPort = 3000
+
+[deployment]
+deploymentTarget = "cloudrun"
+
+[userenv]
+
+[userenv.shared]
+LOG_LEVEL = "info"
+ALLOWED_ORIGINS = "https://xpressprofx.com,https://www.xpressprofx.com"
+APP_NAME = "XpressPro FX"
+PORT = "8080"
+NODE_ENV = "development"
+ENABLE_DEMO_AUTH = "true"
+
+[workflows]
