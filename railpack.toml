@@ -1,4 +1,4 @@
-[[phases.setup]
+[phases.setup]
 nixPkgs = ['nodejs_20']
 
 [phases.install]
@@ -11,6 +11,7 @@ cmds = ['npm run build -w @workspace/api-server']
 cmd = 'node artifacts/api-server/dist/index.mjs'
 
 [deploy]
+preDeployCommand = 'cd artifacts/api-server && npx drizzle-kit migrate'
 healthcheckPath = '/healthz'
 restartPolicyType = 'ON_FAILURE'
 restartPolicyMaxRetries = 5
