@@ -1,4 +1,24 @@
 [Unit]
+Description=XpressPro FX API service
+After=network.target
+
+[Service]
+Type=simple
+# Replace 'www-data' with the appropriate user on your VPS
+User=www-data
+# Set WorkingDirectory to your deployment path, e.g. /var/www/rebranded-xpfx
+WorkingDirectory=/path/to/rebranded-xpfx
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Start script handles building and launching the correct entrypoint
+ExecStart=/bin/bash /path/to/rebranded-xpfx/start.sh
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+[Unit]
 Description=XpressPro FX Node.js API
 After=network.target
 
