@@ -23,7 +23,10 @@
     "start:prod": "NODE_ENV=production npm run build --workspaces --if-present && NODE_ENV=production node artifacts/api-server/dist/artifacts/api-server/src/index.js",
     "dev": "npm run dev --workspaces --if-present",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pm2:install": "npm i -g pm2 || true",
+    "pm2:start": "pm2 start deploy/ecosystem.config.js",
+    "pm2:save": "pm2 save"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

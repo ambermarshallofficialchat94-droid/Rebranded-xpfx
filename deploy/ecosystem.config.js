@@ -8,6 +8,9 @@ module.exports = {
       instances: 1,
       exec_mode: 'cluster',
       watch: false,
+      error_file: './logs/pm2/xpresspro-err.log',
+      out_file: './logs/pm2/xpresspro-out.log',
+      merge_logs: true,
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'production',
