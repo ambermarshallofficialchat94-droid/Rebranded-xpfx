@@ -1,84 +1,31 @@
 [Unit]
-Description=XpressPro FX API service
-After=network.target
-
-[Service]
-Type=simple
-# Replace 'www-data' with the appropriate user on your VPS
-User=www-data
-# Set WorkingDirectory to your deployment path, e.g. /var/www/rebranded-xpfx
-WorkingDirectory=/path/to/rebranded-xpfx
-Environment=NODE_ENV=production
-Environment=PORT=3000
-# Start script handles building and launching the correct entrypoint
-ExecStart=/bin/bash /path/to/rebranded-xpfx/start.sh
-Restart=on-failure
-RestartSec=5s
-LimitNOFILE=65536
-
-[Install]
-WantedBy=multi-user.target
-[Unit]
-Description=XpressPro FX Node.js API
-After=network.target
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/workspaces/Rebranded-xpfx
-EnvironmentFile=/etc/xpressfx.env
-ExecStart=/usr/bin/env bash /workspaces/Rebranded-xpfx/start.sh
-Restart=always
-RestartSec=5
-KillSignal=SIGINT
-TimeoutStopSec=30
-
-[Install]
-WantedBy=multi-user.target
-[Unit]
-Description=XpressPro FX API Server — Production
-Documentation=https://github.com/alfredgrace904-ops/Rebranded-xpfx
-After=network-online.target syslog.target
+Description=XpressPro FX API Server
+After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/xpresspro
-User=xpresspro
-Group=xpresspro
+# Adjust the User and WorkingDirectory for your VPS environment
+User=www-data
+WorkingDirectory=/var/www/Rebranded-xpfx
 EnvironmentFile=-/etc/xpressfx.env
 Environment="NODE_ENV=production"
 Environment="PORT=3000"
 
-# Main startup command
-ExecStart=/usr/local/bin/node --enable-source-maps artifacts/api-server/dist/artifacts/api-server/src/index.js
-
-# Restart policy for crash recovery
+# The start script will install dev deps for the build step when necessary
+ExecStart=/usr/bin/env bash /var/www/Rebranded-xpfx/start.sh
 Restart=on-failure
-RestartSec=5
-StartLimitInterval=300
+RestartSec=5s
+StartLimitIntervalSec=300
 StartLimitBurst=10
 
-# Timeout settings
-TimeoutStartSec=60
-TimeoutStopSec=30
-KillMode=process
-
-# Security hardening
+# Security and resource limits
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
+ProtectSystem=full
 ProtectHome=true
-ReadWritePaths=/opt/xpresspro /var/log/xpresspro
-
-# Logging
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=xpresspro-fx
-SyslogFacility=local0
-
-# Resource limits
-LimitNOFILE=65535
+ReadWritePaths=/var/www/Rebranded-xpfx /var/log/xpresspro
+LimitNOFILE=65536
 LimitNPROC=32768
 MemoryMax=2G
 
