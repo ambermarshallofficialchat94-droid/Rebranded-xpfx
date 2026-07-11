@@ -32,7 +32,7 @@ fi
 
 export PORT="${PORT:-8080}"
 RUN_NODE_ENV="${NODE_ENV:-production}"
-export NODE_ENV="development"
+export NODE_ENV="$RUN_NODE_ENV"
 
 # Ensure a usable port value
 PORT_INT="${PORT}"
@@ -64,6 +64,10 @@ echo ""
 echo "[install] Running npm ci with development dependencies..."
 # Ensure devDependencies (like TypeScript) are available when running locally or on a VPS
 NPM_CONFIG_PRODUCTION=false npm ci --prefer-offline --no-audit --no-fund 2>&1 | tail -10
+
+echo ""
+echo "[predeploy] Running deployment validation..."
+node scripts/predeploy.mjs --skip-env-check
 
 # Build API server
 echo ""

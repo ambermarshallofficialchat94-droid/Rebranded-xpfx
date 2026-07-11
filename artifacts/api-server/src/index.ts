@@ -27,11 +27,16 @@ async function initDatabase() {
     return null;
   }
 
-  const { PrismaClient } = await import('@prisma/client');
-  const client = new PrismaClient();
-  await client.$connect();
-  console.log('[DB] PostgreSQL connected via Prisma');
-  return client;
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const client = new PrismaClient();
+    await client.$connect();
+    console.log('[DB] PostgreSQL connected via Prisma');
+    return client;
+  } catch (error) {
+    console.warn('[DB] Prisma unavailable — continuing without persistence', error);
+    return null;
+  }
 }
 
 function validateRequiredEnv() {

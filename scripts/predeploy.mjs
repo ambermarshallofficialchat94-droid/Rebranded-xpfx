@@ -168,11 +168,16 @@ console.log("[predeploy] Checking for conflicting platform build configs...");
 const conflictingConfigs = [
   "nixpacks.toml",
   "fly.toml",
-  "Procfile",
   "Procfile.backup",
+];
+const knownConfigs = [
+  "railway.json",
+  "railpack.toml",
+  "render.yaml",
+  "vercel.json",
+  "Procfile",
   "Dockerfile",
 ];
-const knownConfigs = ["railway.json", "railpack.toml", "render.yaml", "vercel.json"];
 
 let rootEntries;
 try {

@@ -5,13 +5,14 @@ services:
   api:
     build:
       context: .
-      dockerfile: infrastructure/docker/Dockerfile
+      dockerfile: Dockerfile
     container_name: xpressprofx-api
     restart: unless-stopped
     ports:
-      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:3000:3000"
     environment:
       - NODE_ENV=production
+      - PORT=3000
     env_file:
       - .env.production
     depends_on:
@@ -22,28 +23,11 @@ services:
     networks:
       - xpressprofx-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # === Background Worker (BullMQ) ===
-  worker:
-    build:
-      context: .
-      dockerfile: infrastructure/docker/Dockerfile.worker
-    container_name: xpressprofx-worker
-    restart: unless-stopped
-    env_file:
-      - .env.production
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - xpressprofx-net
 
   # === PostgreSQL Database ===
   postgres:
@@ -52,11 +36,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: xpressprofx
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: xpressprofx
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infrastructure/docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - xpressprofx-net
     healthcheck:
@@ -85,8 +68,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - certbot_www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt:ro
     depends_on:

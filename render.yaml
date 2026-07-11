@@ -41,14 +41,15 @@ services:
     plan: starter
 
     buildCommand: >-
-      npm ci &&
-      npm run build -w @workspace/api-server &&
+      npm ci --no-audit --no-fund &&
+      npm run predeploy &&
+      npm run build --workspace artifacts/api-server &&
       if [ "${BUILD_ALL:-false}" = "true" ]; then
-        npm run build -w @workspace/nextrade &&
-        npm run build -w @workspace/admin-portal;
+        npm run build --workspace artifacts/nextrade &&
+        npm run build --workspace artifacts/admin-portal;
       fi
 
-    startCommand: node --enable-source-maps artifacts/api-server/dist/index.js
+    startCommand: node --enable-source-maps artifacts/api-server/dist/artifacts/api-server/src/index.js
 
     healthCheckPath: /healthz
 

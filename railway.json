@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "npm install && npm run build --workspace artifacts/api-server && npm run build --workspace artifacts/nextrade"
+    "buildCommand": "npm ci --no-audit --no-fund && npm run predeploy && npm run build --workspace artifacts/api-server && npm run build --workspace artifacts/nextrade && npm run build --workspace artifacts/admin-portal"
   },
   "deploy": {
-    "startCommand": "node artifacts/api-server/dist/artifacts/api-server/src/index.js",
+    "startCommand": "node --enable-source-maps artifacts/api-server/dist/artifacts/api-server/src/index.js",
     "healthcheckPath": "/readyz",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
