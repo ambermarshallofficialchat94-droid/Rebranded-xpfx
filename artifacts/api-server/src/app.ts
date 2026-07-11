@@ -108,11 +108,17 @@ app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 // ─── BODY PARSERS ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error(
+    'SESSION_SECRET must be set in production. Signed cookies and sessions cannot use a hardcoded fallback secret.'
+  );
+}
+const sessionSecret = process.env.SESSION_SECRET || 'xpresspro-fx-secret';
+app.use(cookieParser(sessionSecret));
 
 // ─── SESSION ──────────────────────────────────────────────────────────────────
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'xpresspro-fx-secret',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {
