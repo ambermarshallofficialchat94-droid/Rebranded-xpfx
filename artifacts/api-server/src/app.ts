@@ -15,6 +15,13 @@ import apiRoutes from './routes/index';
 const app = express();
 app.disable('x-powered-by');
 
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const requestId = req.get('x-request-id') || randomBytes(8).toString('hex');
+  req.headers['x-request-id'] = requestId;
+  res.setHeader('x-request-id', requestId);
+  next();
+});
+
 // ─── LOGGING ──────────────────────────────────────────────────────────────────
 app.use(pinoHttp({
   level: process.env.LOG_LEVEL || 'info',
@@ -168,30 +175,37 @@ app.use('/api/live-chat/', liveChatLimiter);
 app.set('trust proxy', 1);
 
 // ─── HEALTH CHECKS ────────────────────────────────────────────────────────────
-app.get('/healthz', (_req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'XpressPro FX API',
-    environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
-
-app.get('/api/healthz', (_req: Request, res: Response) => {
-  res.status(200).json({
+function buildHealthPayload(extra: Record<string, unknown> = {}) {
+  return {
     status: 'ok',
     service: 'XpressPro FX API',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    memory: process.memoryUsage()
-  });
+    memory: process.memoryUsage(),
+    ...extra
+  };
+}
+
+app.get('/healthz', (_req: Request, res: Response) => {
+  res.status(200).json(buildHealthPayload({ checks: ['process'] }));
 });
 
-// Readiness probe: verifies DB connectivity when DATABASE_URL is configured
-app.get('/readyz', async (_req: Request, res: Response) => {
+app.get('/livez', (_req: Request, res: Response) => {
+  res.status(200).json(buildHealthPayload({ checks: ['process'] }));
+});
+
+app.get('/api/healthz', (_req: Request, res: Response) => {
+  res.status(200).json(buildHealthPayload());
+});
+
+app.get('/api/livez', (_req: Request, res: Response) => {
+  res.status(200).json(buildHealthPayload());
+});
+
+// Readiness probe: verifies DB connectivity when DATABASE_URL is configured.
+async function readinessHandler(_req: Request, res: Response) {
   if (!process.env.DATABASE_URL) {
     return res.status(200).json({ ready: true, reason: 'no-db-config' });
   }
@@ -200,11 +214,14 @@ app.get('/readyz', async (_req: Request, res: Response) => {
     const client = new PrismaClient();
     await client.$connect();
     await client.$disconnect();
-    return res.status(200).json({ ready: true });
+    return res.status(200).json({ ready: true, reason: 'database-ok' });
   } catch (err) {
     return res.status(503).json({ ready: false, error: String(err) });
   }
-});
+}
+
+app.get('/readyz', readinessHandler);
+app.get('/api/readyz', readinessHandler);
 
 // ─── STATIC FILE SERVING ──────────────────────────────────────────────────────
 const candidateRoots = [

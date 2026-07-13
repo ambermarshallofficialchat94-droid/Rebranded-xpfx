@@ -61,9 +61,9 @@ fi
 
 # Install dependencies
 echo ""
-echo "[install] Running npm ci with development dependencies..."
+echo "[install] Running pnpm install with development dependencies..."
 # Ensure devDependencies (like TypeScript) are available when running locally or on a VPS
-NPM_CONFIG_PRODUCTION=false npm ci --prefer-offline --no-audit --no-fund 2>&1 | tail -10
+NPM_CONFIG_PRODUCTION=false pnpm install --frozen-lockfile --no-audit --no-fund 2>&1 | tail -10
 
 echo ""
 echo "[predeploy] Running deployment validation..."
@@ -72,15 +72,15 @@ node scripts/predeploy.mjs --skip-env-check
 # Build API server
 echo ""
 echo "[build] Building API server..."
-npm run build --workspace=artifacts/api-server
+pnpm run build --workspace=artifacts/api-server
 
 # Optionally build frontend apps (single-service mode)
 if [ "${BUILD_ALL:-false}" = "true" ]; then
   echo ""
   echo "[build] Building NeXTrade frontend..."
-  npm run build --workspace=artifacts/nextrade
+  pnpm run build --workspace=artifacts/nextrade
   echo "[build] Building admin portal..."
-  npm run build --workspace=artifacts/admin-portal
+  pnpm run build --workspace=artifacts/admin-portal
 fi
 
 export NODE_ENV="$RUN_NODE_ENV"

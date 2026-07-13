@@ -8,18 +8,18 @@ echo "==> Running deployment validation"
 node scripts/predeploy.mjs --skip-env-check
 
 echo "==> Installing dependencies"
-npm ci --no-audit --no-fund
+pnpm install --frozen-lockfile --no-audit --no-fund
 
 echo "==> Building all workspaces"
-npm run build --workspace artifacts/api-server
-npm run build --workspace artifacts/nextrade
-npm run build --workspace artifacts/admin-portal
+pnpm run build --workspace artifacts/api-server
+pnpm run build --workspace artifacts/nextrade
+pnpm run build --workspace artifacts/admin-portal
 
 echo "==> Running database migrations"
 cd artifacts/api-server && npx prisma migrate deploy && cd ../.. || true
 
 echo "==> Reloading API with PM2 (zero-downtime)"
-pm run pm2:install || true
+pnpm run pm2:install || true
 pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
 
 echo "==> Reloading Nginx"

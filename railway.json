@@ -3,7 +3,7 @@
 
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "npm ci --no-audit --no-fund && npm run predeploy && npm run build --workspace artifacts/api-server && npx prisma migrate deploy --schema=artifacts/api-server/prisma/schema.prisma && npx prisma generate --schema=artifacts/api-server/prisma/schema.prisma && npm run build --workspace artifacts/nextrade && npm run build --workspace artifacts/admin-portal"
+    "buildCommand": "pnpm install --frozen-lockfile --no-audit --no-fund && pnpm run predeploy && pnpm run build --workspace artifacts/api-server && npx prisma migrate deploy --schema=artifacts/api-server/prisma/schema.prisma && npx prisma generate --schema=artifacts/api-server/prisma/schema.prisma && pnpm run build --workspace artifacts/nextrade && pnpm run build --workspace artifacts/admin-portal"
   },
 
   "deploy": {

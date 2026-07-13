@@ -62,7 +62,7 @@ if (!skipEnvCheck) {
 
   // Required in production
   if (isProduction) {
-    const prodRequired = ["SESSION_SECRET", "ADMIN_EMAIL", "ADMIN_PASSWORD"];
+    const prodRequired = ["SESSION_SECRET", "JWT_SECRET", "WALLET_ENCRYPTION_KEY", "DATABASE_URL", "ADMIN_EMAIL", "ADMIN_PASSWORD"];
     for (const key of prodRequired) {
       const val = (process.env[key] ?? "").trim();
       if (!val) {
@@ -71,6 +71,13 @@ if (!skipEnvCheck) {
             `  Set ${key} as a secret in your platform's environment settings.`
         );
       }
+    }
+
+    if (!process.env.ALLOWED_ORIGINS?.trim() && !process.env.REPLIT_DOMAINS?.trim()) {
+      fail(
+        `Missing required production CORS configuration: ALLOWED_ORIGINS or REPLIT_DOMAINS must be configured.\n` +
+          `  Set ALLOWED_ORIGINS=https://your-frontend.com or REPLIT_DOMAINS=<hostnames> in your platform env vars.`
+      );
     }
 
     // Security check: MoonPay API key without secret key is a critical misconfiguration

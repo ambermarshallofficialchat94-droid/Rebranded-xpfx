@@ -41,12 +41,12 @@ services:
     plan: starter
 
     buildCommand: >-
-      npm ci --no-audit --no-fund &&
-      npm run predeploy &&
-      npm run build --workspace artifacts/api-server &&
+      pnpm install --frozen-lockfile --no-audit --no-fund &&
+      pnpm run predeploy &&
+      pnpm run build --workspace artifacts/api-server &&
       if [ "${BUILD_ALL:-false}" = "true" ]; then
-        npm run build --workspace artifacts/nextrade &&
-        npm run build --workspace artifacts/admin-portal;
+        pnpm run build --workspace artifacts/nextrade &&
+        pnpm run build --workspace artifacts/admin-portal;
       fi
 
     startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs

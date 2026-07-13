@@ -37,8 +37,8 @@ Rebranded-xpfx/
 
 ## Requirements
 
-- Node.js v18+
-- npm v9+
+- Node.js v20+
+- pnpm v10+
 - Railway account
 - GitHub repository connected to Railway project
 
@@ -48,28 +48,25 @@ Rebranded-xpfx/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/alfredgrace904-ops/Rebranded-xpfx.git
+git clone https://github.com/maxgiesingerofficialchat1-wq/Rebranded-xpfx.git
 cd Rebranded-xpfx
 
-# 2. Navigate to the API server
-cd artifacts/api-server
+# 2. Install dependencies
+pnpm install
 
-# 3. Install dependencies
-npm install
-
-# 4. Copy and configure environment variables
+# 3. Copy and configure environment variables
 cp .env.example .env
 # Open .env and fill in all required values
 
-# 5. Build the TypeScript source
-npm run build
+# 4. Build the TypeScript source
+pnpm build
 
-# 6. Verify build output
-ls dist/
-# Confirm index.js exists before proceeding
+# 5. Verify build output
+ls artifacts/api-server/dist/
+# Confirm index.mjs exists before proceeding
 
-# 7. Start the production server
-npm start
+# 6. Start the production server
+pnpm start
 ```
 
 ---
@@ -88,11 +85,12 @@ Copy it to `.env` and fill in every value before running locally or deploying to
 
 | Script | Description |
 |---|---|
-| `npm run build` | Compiles TypeScript source to `dist/` |
-| `npm start` | Runs the compiled production server |
-| `npm run dev` | Runs server in development watch mode |
-| `npm test` | Runs the full test suite |
-| `npm audit` | Checks for known security vulnerabilities |
+| `pnpm run build` | Compiles TypeScript source to `dist/` |
+| `pnpm start` | Runs the compiled production server |
+| `pnpm run predeploy` | Validates repo config and production readiness |
+| `pnpm run dev` | Runs server in development watch mode |
+| `pnpm test` | Runs the full test suite |
+| `pnpm audit` | Checks for known security vulnerabilities |
 
 ---
 
@@ -127,17 +125,16 @@ This project uses **Railpack** as the build system on **Railway**.
 
 ```bash
 # Before every deployment, verify build output locally
-cd artifacts/api-server
-npm install
-npm run build
-ls dist/
-# index.js must be present before pushing
+pnpm install
+pnpm build
+ls artifacts/api-server/dist/
+# index.mjs must be present before proceeding
 ```
 
 Push to your connected Railway branch to trigger automatic deployment.
 
 Railway will execute:
-1. Railpack build using `npm run build`
+1. Railpack build using `pnpm build`
 2. Start command: `node artifacts/api-server/dist/index.mjs`
 3. Health check against `/healthz`
 
@@ -145,16 +142,16 @@ Railway will execute:
 
 ## CI/CD Pipeline — GitHub Actions
 
-The `.github/workflows/deploy.yml` pipeline runs automatically on every push.
+The `.github/workflows/ci.yml` pipeline runs automatically on every push.
 
 | Stage | Description |
 |---|---|
-| Build & Compile | TypeScript compilation via `npm run build` |
-| Automated Tests | Full test suite via `npm test` |
-| Security Audit | `npm audit` scan for known vulnerabilities |
-| Zero-Downtime Deploy | Rolling deployment with no service interruption |
-| Health Check Verification | Post-deploy check against `/healthz` |
-| Automatic Rollback | Instant rollback on failed deployment or health check |
+| Install dependencies | `pnpm install --frozen-lockfile --no-audit --no-fund` |
+| Predeploy validation | `pnpm run predeploy` |
+| Run lint | `pnpm lint` |
+| Run tests | `pnpm test` |
+| Build all workspaces | `pnpm build` |
+| Security audit | `pnpm audit --audit-level=high` |
 
 ---
 
@@ -163,7 +160,7 @@ The `.github/workflows/deploy.yml` pipeline runs automatically on every push.
 - All secrets and credentials must be stored as Railway environment variables — **never hardcoded**
 - CORS origin allowlist must be explicitly configured per environment
 - Rate limiting is active on authentication and live-chat routes
-- Run `npm audit` before every production release
+- Run `pnpm audit --audit-level=high` before every production release
 - HTTPS and SSL/TLS are enforced at the Railway infrastructure level
 - `.env` must never be committed to version control
 

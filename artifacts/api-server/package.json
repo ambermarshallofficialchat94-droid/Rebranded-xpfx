@@ -10,7 +10,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "postinstall": "prisma generate --schema=./prisma/schema.prisma || true",
     "test": "jest --forceExit --coverage",
-    "audit": "npm audit --audit-level=high"
+    "audit": "pnpm audit --audit-level=high"
   },
   "engines": {
     "node": ">=18.0.0",
