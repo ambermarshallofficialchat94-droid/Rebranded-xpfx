@@ -25,7 +25,16 @@ export const env = {
   LOG_LEVEL: get("LOG_LEVEL") ?? "info",
 
   // Demo auth
-  ENABLE_DEMO_AUTH: get("ENABLE_DEMO_AUTH") === "true",
+    // Demo auth: allow explicit true/false via env; if unset, default to true in
+    // non-production and false in production so demo endpoints work for local dev.
+    ENABLE_DEMO_AUTH: (() => {
+      const raw = process.env["ENABLE_DEMO_AUTH"];
+      if (raw === undefined) return undefined;
+      const val = raw.trim().toLowerCase();
+      if (val === "true") return true;
+      if (val === "false") return false;
+      return undefined;
+    })(),
 
   // Admin provisioning
   ADMIN_EMAIL: get("ADMIN_EMAIL"),
@@ -103,7 +112,10 @@ export const env = {
 } as const;
 
 export const isProduction = env.NODE_ENV === "production";
-export const isDemoAuthEnabled = env.ENABLE_DEMO_AUTH && !isProduction;
+export const isDemoAuthEnabled =
+  // If the env var was explicitly set, respect it. Otherwise enable demo auth
+  // by default in non-production environments for easier local testing.
+  (env.ENABLE_DEMO_AUTH ?? !isProduction) as boolean;
 export const hasSmtpCredentials = Boolean(
   env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS,
 );

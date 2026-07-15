@@ -75,6 +75,7 @@ router.post("/auth/forgot-password", async (req, res) => {
         await sendEmail({
           to: normalized,
           subject: "Reset your XpressPro FX password",
+          kind: "auth.forgot_password",
           text: [
             `Hi ${stored.user.fullName},`,
             "",

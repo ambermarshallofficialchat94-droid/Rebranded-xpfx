@@ -1,108 +1,89 @@
-import app from "./app";
-import { adminSeedStatus } from "./lib/store";
-import { logger } from "./lib/logger";
-import { startSweeper } from "./lib/sweeper";
-import { assertRequiredEnv } from "./lib/env";
-import { hydrateFromDb } from "./lib/hydrate";
+import 'express-async-errors';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const { port } = assertRequiredEnv();
+import http from 'http';
+import app from './app';
+import { validateProductionEnvironment } from '../../../scripts/validate-production-env.mjs';
 
-if (adminSeedStatus.provisioned) {
-  logger.info(
-    { adminEmail: adminSeedStatus.email },
-    "[admin] Admin account provisioned from environment.",
-  );
-} else {
-  logger.warn(
-    { reason: adminSeedStatus.reason },
-    "[admin] No admin account provisioned. Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables to enable admin login.",
-  );
+type PrismaClientType = {
+  $connect: () => Promise<void>;
+  $disconnect: () => Promise<void>;
+};
+
+const DEFAULT_PORT = 3000;
+const PORT = Number(process.env.PORT || DEFAULT_PORT);
+const server = http.createServer(app);
+
+let prisma: PrismaClientType | null = null;
+
+function normalizePort(value: string | number | undefined) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_PORT;
 }
 
-// --------------------------------------------------------------------------
-// Crash guards
-// --------------------------------------------------------------------------
-// Without these, one unhandled promise rejection or thrown error anywhere
-// in the app kills the entire Node process — the platform then shows the
-// request as "crashed" and restarts the container, dropping in-flight requests.
-//
-// These handlers log the error with full context and keep the process
-// alive for transient/recoverable errors (a failed fetch, a bad DB query
-// that wasn't awaited correctly, etc). This is NOT a way to "fix" broken
-// code — a bug that throws will keep throwing every time it's hit. What
-// this buys you is that ONE bad request can't take down the whole server
-// for every other user.
-process.on("uncaughtException", (err) => {
-  logger.error({ err: err.message, stack: err.stack }, "[crash-guard] uncaughtException — process kept alive");
-});
+async function initDatabase() {
+  if (!process.env.DATABASE_URL) {
+    console.warn('[DB] DATABASE_URL not set — continuing without Prisma persistence');
+    return null;
+  }
 
-process.on("unhandledRejection", (reason) => {
-  const err = reason instanceof Error ? reason : new Error(String(reason));
-  logger.error({ err: err.message, stack: err.stack }, "[crash-guard] unhandledRejection — process kept alive");
-});
-
-// --------------------------------------------------------------------------
-// Startup: hydrate then listen
-// --------------------------------------------------------------------------
-// Hydration must complete before the HTTP server opens so that the first
-// request never sees an empty in-memory store. Errors are non-fatal — the
-// server continues in in-memory-only mode (data lost on restart) rather than
-// refusing to start entirely.
-async function main() {
   try {
-    await hydrateFromDb();
-  } catch (err) {
-    const e = err instanceof Error ? err : new Error(String(err));
-    logger.error(
-      { err: e.message },
-      "[hydrate] Startup hydration failed — continuing in in-memory-only mode",
-    );
+    const { PrismaClient } = await import('@prisma/client');
+    const client = new PrismaClient();
+    await client.$connect();
+    console.log('[DB] PostgreSQL connected via Prisma');
+    return client;
+  } catch (error) {
+    console.warn('[DB] Prisma unavailable — continuing without persistence', error);
+    return null;
   }
-
-  const server = app.listen(port, (err?: Error) => {
-    if (err) {
-      logger.error({ err }, "Error listening on port");
-      process.exit(1);
-    }
-    logger.info({ port }, "Server listening");
-    startSweeper();
-  });
-
-  // --------------------------------------------------------------------------
-  // Graceful shutdown
-  // --------------------------------------------------------------------------
-  // Platforms send SIGTERM before stopping/restarting a container (deploys,
-  // scaling, healthcheck failures). Without handling it, in-flight requests
-  // get cut off mid-response. This stops accepting new connections, lets
-  // existing requests finish (up to a timeout), then exits cleanly.
-  let shuttingDown = false;
-
-  function shutdown(signal: string) {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    logger.info({ signal }, "[shutdown] received signal, closing gracefully");
-
-    const forceExitTimer = setTimeout(() => {
-      logger.warn("[shutdown] graceful shutdown timed out, forcing exit");
-      process.exit(1);
-    }, 10_000);
-
-    server.close((closeErr) => {
-      clearTimeout(forceExitTimer);
-      if (closeErr) {
-        logger.error({ err: closeErr.message }, "[shutdown] error during close");
-        process.exit(1);
-      }
-      logger.info("[shutdown] closed all connections, exiting cleanly");
-      process.exit(0);
-    });
-  }
-
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
-main().catch((err) => {
-  logger.error({ err }, "Fatal startup error");
+async function bootstrap() {
+  try {
+    validateProductionEnvironment(process.env);
+    prisma = await initDatabase();
+
+    const resolvedPort = normalizePort(process.env.PORT || PORT);
+
+    server.listen(resolvedPort, '0.0.0.0', () => {
+      console.log(`[SERVER] XpressPro FX API running on port ${resolvedPort}`);
+      console.log(`[SERVER] Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`[SERVER] Health: http://0.0.0.0:${resolvedPort}/healthz`);
+    });
+  } catch (error) {
+    console.error('[SERVER] Failed to start:', error);
+    await prisma?.$disconnect();
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', async () => {
+  console.log('[SERVER] SIGTERM received — shutting down gracefully');
+  server.close(async () => {
+    await prisma?.$disconnect();
+    console.log('[SERVER] Shutdown complete');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('[SERVER] SIGINT received — shutting down gracefully');
+  server.close(async () => {
+    await prisma?.$disconnect();
+    process.exit(0);
+  });
+});
+
+server.on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`[SERVER] Port ${PORT} is already in use. Please stop the existing process or change PORT.`);
+    console.error('[SERVER] If this is a local or VPS restart, wait a few seconds and try again.');
+  } else {
+    console.error('[SERVER] Failed to bind:', error);
+  }
   process.exit(1);
 });
+
+bootstrap();

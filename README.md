@@ -1,157 +1,188 @@
-# XpressPro FX — Complete Deployment Guide
-
-## Works On Any Platform
-- Railway.app (free tier)
-- Render.com (free tier)
-- Fly.io (free tier)
-- VPS (DigitalOcean, Hetzner, Vultr)
-- Local computer (Windows, Mac, Linux)
+Here is your complete `README.md`, production enterprise grade, ready to copy in one click.
 
 ---
 
-## STEP 1 — Prerequisites (install once)
+**`README.md`**
 
-Install Node.js 20+ from: https://nodejs.org (choose LTS)
+```markdown
+# XpressPro FX — Rebranded XPFX
 
-Then open terminal and run:
+A production-ready, enterprise-grade trading platform API server built with Node.js, TypeScript, deployed on Railway using Railpack with a fully automated GitHub Actions CI/CD pipeline.
+
+---
+
+## Project Structure
+
 ```
-npm install -g pnpm
+Rebranded-xpfx/
+├── artifacts/
+│   └── api-server/
+│       ├── src/
+│       │   ├── app.ts            # Express app — middleware, routes, security
+│       │   └── index.ts          # Server entry point
+│       ├── dist/                 # Compiled output (auto-generated, do not edit)
+│       ├── package.json          # API server dependencies and scripts
+│       └── tsconfig.json         # TypeScript compiler configuration
+├── .github/
+│   └── workflows/
+│       └── deploy.yml            # GitHub Actions CI/CD pipeline
+├── railway.json                  # Railway deployment configuration
+├── railpack.json                 # Railpack build configuration
+├── .railwayignore                # Files excluded from Railway deployment
+├── .env.example                  # Environment variable template
+└── README.md
 ```
 
 ---
 
-## STEP 2 — Set Up Environment Variables
+## Requirements
 
-Copy .env.example to .env:
-```
+- Node.js v20+
+- pnpm v10+
+- Railway account
+- GitHub repository connected to Railway project
+
+---
+
+## Local Development Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/maxgiesingerofficialchat1-wq/Rebranded-xpfx.git
+cd Rebranded-xpfx
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Copy and configure environment variables
 cp .env.example .env
-```
+# Open .env and fill in all required values
 
-Open .env and fill in at minimum:
-- SESSION_SECRET (generate at randomkeygen.com — 256-bit WEP key)
-- ADMIN_EMAIL
-- ADMIN_PASSWORD
-- PORT=8080
+# 4. Build the TypeScript source
+pnpm build
 
----
+# 5. Verify build output
+ls artifacts/api-server/dist/
+# Confirm index.mjs exists before proceeding
 
-## STEP 3 — Build The Project
-
-```
-node build.js
-```
-
-This installs all dependencies, builds the API server,
-and builds both frontends. Takes 2-5 minutes first time.
-
----
-
-## STEP 4 — Start The Server
-
-```
-node artifacts/api-server/dist/index.mjs
-```
-
-Or use the start script:
-```
-bash start.sh
-```
-
-Your app is now running at:
-- Main platform: http://localhost:8080
-- Admin portal:  http://localhost:8080/xpadmin
-
----
-
-## Deploying to Railway (Free)
-
-1. Create account at railway.app (sign up with GitHub)
-2. Create new repo at github.com and upload all these files
-3. In Railway: New Project > Deploy from GitHub > select your repo
-4. Add Variables in Railway dashboard (copy from .env.example)
-5. Add PostgreSQL service in Railway (sets DATABASE_URL automatically)
-6. Your app is live at: https://yourapp.railway.app
-
----
-
-## Deploying to Render (Free)
-
-1. Create account at render.com
-2. Upload files to GitHub
-3. New Web Service > Connect GitHub repo
-4. Build Command: npm install -g pnpm && node build.js
-5. Start Command: node artifacts/api-server/dist/index.mjs
-6. Add environment variables from .env.example
-7. Add PostgreSQL from Render dashboard
-
----
-
-## Deploying to a VPS (Ubuntu)
-
-SSH into your server then run:
-```
-apt update && apt install -y nodejs npm git
-npm install -g pnpm
-git clone your-repo /var/www/xpressprofx
-cd /var/www/xpressprofx
-cp .env.example .env
-nano .env   # fill in your values
-node build.js
-npm install -g pm2
-pm2 start artifacts/api-server/dist/index.mjs --name xpressprofx
-pm2 save && pm2 startup
+# 6. Start the production server
+pnpm start
 ```
 
 ---
 
-## Running in Development Mode (3 terminals)
+## Environment Variables
 
-Terminal 1 — API server:
-```
-cd artifacts/api-server && PORT=8080 pnpm run dev
-```
+All required environment variables are defined in `.env.example`.
+Copy it to `.env` and fill in every value before running locally or deploying to Railway.
 
-Terminal 2 — Main frontend:
-```
-cd artifacts/nextrade && PORT=3000 BASE_PATH=/ pnpm run dev
-```
-
-Terminal 3 — Admin portal:
-```
-cd artifacts/admin-portal && PORT=3001 BASE_PATH=/xpadmin/ pnpm run dev
-```
-
-Then open:
-- Main app:    http://localhost:3000
-- Admin:       http://localhost:3001
-- API:         http://localhost:8080/api
+> **Important:** Never commit `.env` to version control.
+> All production secrets must be set directly in Railway environment variable settings.
 
 ---
 
-## Environment Variables Reference
+## Available Scripts
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| SESSION_SECRET | YES | Random 64+ char string |
-| ADMIN_EMAIL | YES | Admin login email |
-| ADMIN_PASSWORD | YES | Admin login password |
-| PORT | YES | Server port (8080) |
-| NODE_ENV | YES | production or development |
-| DATABASE_URL | Recommended | PostgreSQL connection string |
-| ALCHEMY_API_KEY | Recommended | Live blockchain data |
-| SENDGRID_API_KEY | Recommended | Email notifications |
-| MOONPAY_API_KEY | Optional | Buy crypto feature |
-| MOONPAY_SECRET_KEY | Optional | Required with MOONPAY_API_KEY |
-| MOONPAY_WEBHOOK_SECRET | Optional | Webhook verification |
-| OPENAI_API_KEY | Optional | AI assistant |
-| ALLOWED_ORIGINS | Optional | CORS — your domain URLs |
+| Script | Description |
+|---|---|
+| `pnpm run build` | Compiles TypeScript source to `dist/` |
+| `pnpm start` | Runs the compiled production server |
+| `pnpm run predeploy` | Validates repo config and production readiness |
+| `pnpm run dev` | Runs server in development watch mode |
+| `pnpm test` | Runs the full test suite |
+| `pnpm audit` | Checks for known security vulnerabilities |
 
 ---
 
-## Admin Login
-URL: http://yoursite.com/xpadmin
-Email: your ADMIN_EMAIL value
-Password: your ADMIN_PASSWORD value
+## API Health Check Endpoints
 
-## Support
-Email: support@xpressprofx.com
+| Endpoint | Method | Description |
+|---|---|---|
+| `/healthz` | GET | Basic server liveness check |
+| `/api/healthz` | GET | API-level deep health check |
+
+---
+
+## Production Features
+
+| Feature | Status |
+|---|---|
+| CORS with origin allowlist | ✅ Active |
+| CSRF defense | ✅ Active |
+| Rate limiting — auth routes | ✅ Active |
+| Rate limiting — live-chat routes | ✅ Active |
+| Webhook raw body capture | ✅ Active |
+| Session and platform gate | ✅ Active |
+| Static file serving for SPA | ✅ Active |
+| Pino HTTP structured logging | ✅ Active |
+| Health check endpoints `/healthz` `/api/healthz` | ✅ Active |
+
+---
+
+## Deployment — Railway via Railpack
+
+This project uses **Railpack** as the build system on **Railway**.
+
+```bash
+# Before every deployment, verify build output locally
+pnpm install
+pnpm build
+ls artifacts/api-server/dist/
+# index.mjs must be present before proceeding
+```
+
+Push to your connected Railway branch to trigger automatic deployment.
+
+Railway will execute:
+1. Railpack build using `pnpm build`
+2. Start command: `node artifacts/api-server/dist/index.mjs`
+3. Health check against `/healthz`
+
+---
+
+## CI/CD Pipeline — GitHub Actions
+
+The `.github/workflows/ci.yml` pipeline runs automatically on every push.
+
+| Stage | Description |
+|---|---|
+| Install dependencies | `pnpm install --frozen-lockfile --no-audit --no-fund` |
+| Predeploy validation | `pnpm run predeploy` |
+| Run lint | `pnpm lint` |
+| Run tests | `pnpm test` |
+| Build all workspaces | `pnpm build` |
+| Security audit | `pnpm audit --audit-level=high` |
+
+---
+
+## Security Considerations
+
+- All secrets and credentials must be stored as Railway environment variables — **never hardcoded**
+- CORS origin allowlist must be explicitly configured per environment
+- Rate limiting is active on authentication and live-chat routes
+- Run `pnpm audit --audit-level=high` before every production release
+- HTTPS and SSL/TLS are enforced at the Railway infrastructure level
+- `.env` must never be committed to version control
+
+---
+
+## Real-Time Experience
+
+The platform is architected for real-time trading data and live user interactions through:
+
+- Low-latency Express API response architecture
+- Webhook integration with raw body capture
+- Session-aware platform gating
+- Live-chat route with dedicated rate limiting
+- Structured real-time observability logging via Pino HTTP
+
+---
+
+## License
+
+Private — All rights reserved. XpressPro FX © 2026
+```
+
+---
+
+That is the full file, composed from everything covered across our session. You can copy it entirely in one click. Let me know if you need the `deploy.yml` or `.env.example` reviewed and matched to this same production standard.

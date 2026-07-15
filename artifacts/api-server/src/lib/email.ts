@@ -32,7 +32,9 @@ const MAX_LOG = 500;
 export interface SendEmailInput {
   to: string;
   subject: string;
-  body: string;
+  body?: string;
+  text?: string;
+  html?: string;
   kind: string;
   /** Optional override; defaults to no_reply@xpressprofx.com. */
   from?: string;
@@ -48,6 +50,7 @@ async function deliverViaSendGrid(input: SendEmailInput, from: string): Promise<
   const apiKey = env.SENDGRID_API_KEY;
   if (!apiKey) return { ok: false, provider: "sendgrid", error: "SENDGRID_API_KEY not set" };
   try {
+    const textBody = input.text ?? input.body ?? "";
     const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
       method: "POST",
       headers: {
@@ -59,10 +62,10 @@ async function deliverViaSendGrid(input: SendEmailInput, from: string): Promise<
         from: { email: from, name: "XpressPro FX" },
         subject: input.subject,
         content: [
-          { type: "text/plain", value: input.body },
+          { type: "text/plain", value: textBody },
           {
             type: "text/html",
-            value: `<div style="font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;color:#111">${input.body
+            value: input.html ?? `<div style="font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;color:#111">${textBody
               .replace(/&/g, "&amp;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;")
@@ -121,7 +124,8 @@ async function deliverViaSmtp(input: SendEmailInput, from: string): Promise<Prov
       from,
       to: input.to,
       subject: input.subject,
-      text: input.body,
+      text: input.text ?? input.body ?? "",
+      html: input.html,
     });
     return { ok: true, provider: "smtp" };
   } catch (err) {
@@ -131,12 +135,13 @@ async function deliverViaSmtp(input: SendEmailInput, from: string): Promise<Prov
 
 export async function sendEmail(input: SendEmailInput): Promise<SentEmailData> {
   const from = input.from ?? NO_REPLY;
+  const body = input.body ?? input.text ?? "";
   const record: SentEmailData = {
     id: newId("email"),
     to: input.to,
     from,
     subject: input.subject,
-    body: input.body,
+    body,
     kind: input.kind,
     sentAt: NOW(),
   };

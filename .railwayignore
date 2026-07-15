@@ -1,14 +1,15 @@
-# Ignore node_modules and lockfiles
 node_modules
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-
-# Ignore Replit specific files
-.replit
-replit.nix
-replit.md
-
-# Ignore local env files
 .env
-.env.*
+.env.local
+.env.development
+*.log
+*.lock
+.DS_Store
+coverage
+.nyc_output
+__tests__
+*.test.ts
+*.spec.ts
+.git
+.github
+README.md

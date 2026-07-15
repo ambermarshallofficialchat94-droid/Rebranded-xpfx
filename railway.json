@@ -1,15 +1,16 @@
 {
-{
   "$schema": "https://railway.app/railway.schema.json",
+
   "build": {
-    "builder": "RAILPACK"
+    "builder": "RAILPACK",
+    "buildCommand": "pnpm install --frozen-lockfile --no-audit --no-fund && pnpm run predeploy && pnpm run build --workspace artifacts/api-server && npx prisma migrate deploy --schema=artifacts/api-server/prisma/schema.prisma && npx prisma generate --schema=artifacts/api-server/prisma/schema.prisma && pnpm run build --workspace artifacts/nextrade && pnpm run build --workspace artifacts/admin-portal"
   },
+
   "deploy": {
     "startCommand": "node artifacts/api-server/dist/index.mjs",
-    "preDeployCommand": "cd artifacts/api-server && npx drizzle-kit migrate",
-    "healthcheckPath": "/healthz",
-    "healthcheckTimeout": 30,
+    "healthcheckPath": "/readyz",
+    "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 5
+    "restartPolicyMaxRetries": 3
   }
 }
