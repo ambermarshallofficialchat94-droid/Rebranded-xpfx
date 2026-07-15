@@ -23,14 +23,14 @@
     "generate:pitch-deck": "node scripts/generate-pitch-deck.mjs",
     "postinstall": "node scripts/generate-secrets.mjs && node scripts/fix-date-fns.mjs",
     "predeploy": "node scripts/predeploy.mjs --skip-env-check",
-    "build": "pnpm run build --workspaces --if-present",
-    "build:all": "pnpm run build --workspace artifacts/api-server && pnpm run build --workspace artifacts/nextrade && pnpm run build --workspace artifacts/admin-portal",
-    "start": "pnpm run build --workspaces --if-present && node artifacts/api-server/dist/index.mjs",
-    "start:prod": "NODE_ENV=production pnpm run build --workspaces --if-present && NODE_ENV=production node artifacts/api-server/dist/index.mjs",
-    "dev": "pnpm run dev --workspaces --if-present",
+    "build": "pnpm -F xpresspro-fx-api-server run build && pnpm -F @workspace/nextrade run build && pnpm -F @workspace/admin-portal run build && pnpm -F @workspace/api-zod run build",
+    "build:all": "pnpm run build",
+    "start": "pnpm run build && node artifacts/api-server/dist/index.mjs",
+    "start:prod": "NODE_ENV=production pnpm run build && NODE_ENV=production node artifacts/api-server/dist/index.mjs",
+    "dev": "pnpm --recursive run dev --if-present",
     "lint": "eslint . --config eslint.config.cjs --ext .ts,.tsx,.js,.jsx",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm run build --workspace artifacts/api-server && node --test tests/**/*.test.mjs",
+    "test": "pnpm -F xpresspro-fx-api-server run build && node --import tsx tests/app-readiness.test.mjs && node --import tsx tests/production-env.test.mjs",
     "pm2:install": "pnpm add -g pm2 || true",
     "pm2:start": "pm2 start ecosystem.config.cjs",
     "pm2:save": "pm2 save"
@@ -42,6 +42,7 @@
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "prisma": "^5.14.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.4.5"
   },
   "pnpm": {
