@@ -1,11 +1,9 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "pnpm install --frozen-lockfile --no-audit --no-fund && pnpm run predeploy && pnpm run build --workspace artifacts/api-server && npx prisma migrate deploy --schema=artifacts/api-server/prisma/schema.prisma && npx prisma generate --schema=artifacts/api-server/prisma/schema.prisma && pnpm run build --workspace artifacts/nextrade && pnpm run build --workspace artifacts/admin-portal"
+    "buildCommand": "npm install && npm run build --workspace=artifacts/api-server"
   },
-
   "deploy": {
     "startCommand": "node artifacts/api-server/dist/index.mjs",
     "healthcheckPath": "/healthz",
