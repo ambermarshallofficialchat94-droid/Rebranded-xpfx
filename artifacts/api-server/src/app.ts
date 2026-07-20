@@ -3,7 +3,6 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import session from 'express-session';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
 import fs from 'fs';
@@ -11,6 +10,7 @@ import path from 'path';
 import { randomBytes } from 'crypto';
 import client from 'prom-client';
 import apiRoutes from './routes/index';
+import { attachSession } from './lib/session';
 
 const app = express();
 app.disable('x-powered-by');
@@ -89,13 +89,34 @@ app.use(cors({
     if (allowedOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && isPreviewHost(hostname))) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS blocked: ${origin}`));
+      callback(null, false);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
 }));
+
+// ─── CORS REJECTION HANDLER ───────────────────────────────────────────────────
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.get('origin');
+  if (!origin) {
+    return next();
+  }
+
+  const hostname = (() => {
+    try {
+      return new URL(origin).hostname;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  if (!allowedOrigins.includes(origin) && !(process.env.NODE_ENV !== 'production' && isPreviewHost(hostname))) {
+    return res.status(403).json({ success: false, message: 'CORS policy: origin not allowed' });
+  }
+  next();
+});
 
 // ─── METRICS (Prometheus) ───────────────────────────────────────────────────
 const collectDefaultMetrics = client.collectDefaultMetrics;
@@ -128,17 +149,7 @@ if (!sessionSecret) {
 app.use(cookieParser(sessionSecret));
 
 // ─── SESSION ──────────────────────────────────────────────────────────────────
-app.use(session({
-  secret: sessionSecret,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000
-  }
-}));
+app.use(attachSession);
 
 // ─── GLOBAL RATE LIMITER ──────────────────────────────────────────────────────
 const globalLimiter = rateLimit({

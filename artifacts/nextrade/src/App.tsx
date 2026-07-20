@@ -30,6 +30,7 @@ import { Cards } from "@/pages/cards";
 import { Promotions } from "@/pages/promotions";
 import { Billing } from "@/pages/billing";
 import { Admin } from "@/pages/admin";
+import { Education } from "@/pages/education";
 
 import { PublicHome } from "@/pages/public/home";
 import { PublicMarkets } from "@/pages/public/markets";
@@ -73,6 +74,7 @@ function ProtectedShell() {
           <Route path="/cards" component={Cards} />
           <Route path="/promotions" component={Promotions} />
           <Route path="/billing" component={Billing} />
+          <Route path="/education/*" component={Education} />
           <Route path="/admin">
             <RequireAdmin>
               <Admin />
