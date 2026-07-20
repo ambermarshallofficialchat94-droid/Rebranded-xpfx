@@ -38,6 +38,8 @@ import withdrawalGasFeeRouter from "./withdrawal-gas-fee";
 import authPasswordRouter from "./auth-password";
 import authPinRouter from "./auth-pin";
 import adminDepositsRouter from "./admin-deposits";
+import educationRouter from "./education";
+import mentorshipRouter from "./mentorship";
 
 const router: IRouter = Router();
 
@@ -77,5 +79,7 @@ router.use(withdrawalGasFeeRouter);
 router.use(authPasswordRouter);
 router.use(authPinRouter);
 router.use(adminDepositsRouter);
+router.use(educationRouter);
+router.use(mentorshipRouter);
 
 export default router;

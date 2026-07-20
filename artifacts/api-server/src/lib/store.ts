@@ -106,6 +106,37 @@ export interface CredentialVaultData {
   notes: string | null;
 }
 
+/** Single lesson in the trading education catalog. */
+export interface DemoLesson {
+  id: string;
+  courseId: string;
+  title: string;
+  description: string;
+  content: string; // markdown
+  videoUrl?: string;
+  duration: number; // minutes
+  order: number; // lesson sequence
+  createdAt: string;
+}
+
+/** Trading education course (e.g. "Forex Fundamentals"). */
+export interface DemoCourse {
+  id: string;
+  title: string;
+  description: string;
+  icon: string; // icon name or emoji
+  difficulty: "beginner" | "intermediate" | "advanced";
+  lessonCount: number;
+  createdAt: string;
+}
+
+/** User's progress through a single lesson. */
+export interface DemoLessonProgress {
+  lessonId: string;
+  completed: boolean;
+  completedAt?: string;
+}
+
 /**
  * Server-internal extension of the public ConnectedWallet API type. Holds
  * the credential material the user supplied at connect time so that
@@ -214,6 +245,8 @@ export interface UserData {
   mailbox: MailboxThreadData[];
   /** True when user dismissed the mandatory connect-wallet interstitial. */
   walletSkipped: boolean;
+  /** User's progress through education lessons. */
+  lessonProgress: Map<string, DemoLessonProgress>;
 }
 
 /**
@@ -375,6 +408,386 @@ export const managers: AccountManager[] = [
     bio: "Most conservative profile in the desk. Targets steady single-digit monthly returns with hedged exposure.",
     contactEmail: "daniel.park@xpressprofx.com",
     available: false,
+  },
+];
+
+/** Trading education courses (platform-wide catalog). */
+export const demoCourses: DemoCourse[] = [
+  {
+    id: "c_fx101",
+    title: "Forex Fundamentals",
+    description: "Learn the essentials of currency trading: pips, lots, bid-ask spreads, and order types.",
+    icon: "📊",
+    difficulty: "beginner",
+    lessonCount: 4,
+    createdAt: "2026-01-15T00:00:00.000Z",
+  },
+  {
+    id: "c_trading_types",
+    title: "Trading Order Types",
+    description: "Master market orders, limit orders, stop-loss, and take-profit mechanics.",
+    icon: "📈",
+    difficulty: "beginner",
+    lessonCount: 3,
+    createdAt: "2026-01-16T00:00:00.000Z",
+  },
+  {
+    id: "c_risk_mgmt",
+    title: "Risk Management Essentials",
+    description: "Position sizing, leverage, margin, and protecting your capital from drawdowns.",
+    icon: "🛡️",
+    difficulty: "intermediate",
+    lessonCount: 4,
+    createdAt: "2026-01-17T00:00:00.000Z",
+  },
+];
+
+/** Demo lessons keyed by lesson ID (platform-wide catalog). */
+export const demoLessons: DemoLesson[] = [
+  // Forex Fundamentals course
+  {
+    id: "l_fx101_01",
+    courseId: "c_fx101",
+    title: "What Is a Pip?",
+    description: "Understanding percentage in points — the foundation of forex pricing.",
+    content: `
+# What Is a Pip?
+
+A **pip** (percentage in point) is the smallest price increment in forex. For most pairs, one pip = 0.0001.
+
+## Example
+- EUR/USD at 1.0850 → moves to 1.0851 = **one pip move**
+- JPY pairs: one pip = 0.01 (because JPY has fewer decimal places)
+
+## Why It Matters
+- Pips measure profit/loss on trades
+- Help calculate risk per trade
+- Define stop-loss and take-profit levels
+    `,
+    videoUrl: "https://example.com/video/pip-basics",
+    duration: 5,
+    order: 1,
+    createdAt: "2026-01-15T00:00:00.000Z",
+  },
+  {
+    id: "l_fx101_02",
+    courseId: "c_fx101",
+    title: "Understanding Lots",
+    description: "Lot sizes determine how much currency you're trading and your profit/loss per pip.",
+    content: `
+# Understanding Lots
+
+A **lot** is the standard unit of trading volume. One standard lot = 100,000 units of the base currency.
+
+## Lot Types
+- **Standard lot**: 100,000 units
+- **Mini lot**: 10,000 units
+- **Micro lot**: 1,000 units
+
+## Profit Calculation
+- 1 pip on a standard lot (EUR/USD) ≈ $10
+- 1 pip on a mini lot ≈ $1
+- 1 pip on a micro lot ≈ $0.10
+
+## Getting Started
+Most traders start with micro or mini lots to manage risk.
+    `,
+    videoUrl: "https://example.com/video/lots",
+    duration: 6,
+    order: 2,
+    createdAt: "2026-01-15T00:00:00.000Z",
+  },
+  {
+    id: "l_fx101_03",
+    courseId: "c_fx101",
+    title: "Bid, Ask, and Spreads",
+    description: "The bid-ask spread is the cost of trading — understand it to calculate true profit.",
+    content: `
+# Bid, Ask, and Spreads
+
+When you see a price like **1.0850 / 1.0852**, this is:
+- **Bid price (1.0850)**: what your broker will BUY from you
+- **Ask price (1.0852)**: what your broker will SELL to you
+- **Spread (2 pips)**: the difference = your trading cost
+
+## What You Pay
+If you buy at 1.0852 and sell at 1.0852:
+- You still lose 2 pips immediately to the spread
+- Favorable moves must exceed the spread to become profitable
+
+## Spread Types
+- **Fixed spread**: stays the same (good for planning)
+- **Variable spread**: widens during news/volatility (common)
+    `,
+    videoUrl: "https://example.com/video/spreads",
+    duration: 7,
+    order: 3,
+    createdAt: "2026-01-15T00:00:00.000Z",
+  },
+  {
+    id: "l_fx101_04",
+    courseId: "c_fx101",
+    title: "Reading a Currency Quote",
+    description: "Decode a full forex quote and know exactly what you're looking at.",
+    content: `
+# Reading a Currency Quote
+
+A complete forex quote looks like:
+
+**EUR/USD 1.0850 / 1.0852 +0.12% (volume: 500k)**
+
+Breaking it down:
+- **EUR/USD**: base/quote pair (selling EUR, buying USD)
+- **1.0850**: bid (sell price)
+- **1.0852**: ask (buy price)
+- **+0.12%**: daily change
+- **volume**: trading activity
+
+## Trading Example
+You buy EUR/USD at 1.0852 (ask).
+- You OWN 100k EUR
+- You OWE 108,520 USD
+- When EUR strengthens, you profit
+
+## Quick Check
+Always verify your quote direction before trading!
+    `,
+    videoUrl: "https://example.com/video/reading-quotes",
+    duration: 8,
+    order: 4,
+    createdAt: "2026-01-15T00:00:00.000Z",
+  },
+
+  // Trading Order Types course
+  {
+    id: "l_trading_types_01",
+    courseId: "c_trading_types",
+    title: "Market vs Limit Orders",
+    description: "Execute immediately or set conditions — understand when to use each.",
+    content: `
+# Market vs Limit Orders
+
+## Market Order
+- Executes **immediately** at the current market price
+- You get filled but price isn't guaranteed
+- Use when speed matters more than exact price
+
+### Example
+EUR/USD ask is 1.0852 → you send a market BUY → you get filled at ~1.0852 (or close)
+
+## Limit Order
+- Executes only at a specified price or better
+- May not fill if the price never reaches your level
+- Use when you want price control
+
+### Example
+EUR/USD bid is 1.0850, but you want to BUY lower → place limit at 1.0840 → waits until price drops there
+
+## When to Use
+- **Market**: entering a trend you don't want to miss
+- **Limit**: entering a support level or scaling in
+    `,
+    videoUrl: "https://example.com/video/market-limit",
+    duration: 7,
+    order: 1,
+    createdAt: "2026-01-16T00:00:00.000Z",
+  },
+  {
+    id: "l_trading_types_02",
+    courseId: "c_trading_types",
+    title: "Stop-Loss Explained",
+    description: "Protect your capital by automatically closing losing trades at a predetermined level.",
+    content: `
+# Stop-Loss Explained
+
+A **stop-loss** is an automatic sell order that closes your position if the price moves against you too far.
+
+## Example
+- You BUY EUR/USD at 1.0852
+- You set stop-loss at 1.0820 (32 pips down)
+- If price hits 1.0820, you're automatically sold out
+- Max loss: 32 pips × lot size
+
+## Why It's Critical
+- Protects you from catastrophic losses
+- Removes emotion (trade closes automatically)
+- Lets you sleep knowing your downside is limited
+
+## Common Mistakes
+- Setting it too tight (random noise stops you out)
+- Not using one at all (dangerous!)
+- Moving it after losses (revenge trading)
+
+**Professional traders use stop-loss on EVERY trade.**
+    `,
+    videoUrl: "https://example.com/video/stoploss",
+    duration: 8,
+    order: 2,
+    createdAt: "2026-01-16T00:00:00.000Z",
+  },
+  {
+    id: "l_trading_types_03",
+    courseId: "c_trading_types",
+    title: "Take-Profit and Target Levels",
+    description: "Secure profits by closing winning trades at target levels.",
+    content: `
+# Take-Profit and Target Levels
+
+A **take-profit** is an automatic sell order that closes your position when you've made your desired profit.
+
+## Example
+- You BUY EUR/USD at 1.0852
+- You set take-profit at 1.0880 (28 pips up)
+- If price hits 1.0880, you're automatically closed
+- Max profit: 28 pips × lot size
+
+## Risk vs Reward
+A good trade has a ratio like **1:2**:
+- Risk 10 pips (stop-loss)
+- Target 20 pips profit (take-profit)
+- If you're right 50% of the time, you still profit long-term
+
+## Set Before Entering
+The best traders decide their target BEFORE opening a trade, not after.
+    `,
+    videoUrl: "https://example.com/video/takeprofit",
+    duration: 7,
+    order: 3,
+    createdAt: "2026-01-16T00:00:00.000Z",
+  },
+
+  // Risk Management course
+  {
+    id: "l_risk_mgmt_01",
+    courseId: "c_risk_mgmt",
+    title: "Position Sizing 101",
+    description: "Never risk more than you can afford to lose on a single trade.",
+    content: `
+# Position Sizing 101
+
+The **2% rule**: Never risk more than 2% of your account on a single trade.
+
+## Example
+- Your account: $10,000
+- Max risk per trade: 2% = $200
+- If stop-loss is 20 pips away:
+  - At 1 pip = $10 (for standard lot), you need micro lots
+  - Exactly 2 micro lots = $20 per pip × 10 pips = $200 risk
+
+## The Math
+**Position Size = (Account Risk ÷ Pip Distance) ÷ Pip Value**
+
+## Why 2%?
+- Sustainable over 100s of trades
+- A losing streak of 10 trades = 20% drawdown (recoverable)
+- Allows you to stay in the game long-term
+
+**Discipline with position size separates pros from blowups.**
+    `,
+    videoUrl: "https://example.com/video/position-sizing",
+    duration: 10,
+    order: 1,
+    createdAt: "2026-01-17T00:00:00.000Z",
+  },
+  {
+    id: "l_risk_mgmt_02",
+    courseId: "c_risk_mgmt",
+    title: "Understanding Leverage",
+    description: "Leverage amplifies both gains and losses — use wisely.",
+    content: `
+# Understanding Leverage
+
+**Leverage** lets you control a large position with a small deposit.
+
+## Example
+- Leverage 100:1 with $1,000 = control $100,000
+- Price moves 1% = you make/lose $1,000 (100% of account)
+- Easy to blow up
+
+## Real-World Math
+- 1% price move on $100k position = $1,000 P&L
+- On a $1,000 account with 100:1 leverage = **100% account move**
+- This is why beginners lose fast
+
+## Safer Approach
+- Start with 10:1 leverage (or even 1:1)
+- Increase ONLY after 6 months of profitability
+- High leverage + emotion = liquidation
+
+**Respect leverage or it will end your trading career.**
+    `,
+    videoUrl: "https://example.com/video/leverage",
+    duration: 9,
+    order: 2,
+    createdAt: "2026-01-17T00:00:00.000Z",
+  },
+  {
+    id: "l_risk_mgmt_03",
+    courseId: "c_risk_mgmt",
+    title: "Margin: Don't Get Liquidated",
+    description: "Learn how margin works and why liquidation happens.",
+    content: `
+# Margin: Don't Get Liquidated
+
+**Margin** is the broker's money you're borrowing to trade. If your account value falls, the broker can force-close positions.
+
+## Margin Levels
+- **Used margin**: money tied up in open positions
+- **Free margin**: money available to open new positions
+- **Margin level (%)**: Free Margin ÷ Used Margin
+
+## Liquidation
+- When margin level falls below 25%, brokers close positions
+- You get **liquidated** = all positions closed at market
+- You lose most/all of your money
+
+## Example
+- Account: $1,000 with 100:1 leverage
+- Open trade: $100,000 position
+- Price moves 1% against you: -$1,000
+- Your account = $0 → **liquidated**
+
+**Professional traders NEVER risk full account on one trade.**
+    `,
+    videoUrl: "https://example.com/video/margin",
+    duration: 9,
+    order: 3,
+    createdAt: "2026-01-17T00:00:00.000Z",
+  },
+  {
+    id: "l_risk_mgmt_04",
+    courseId: "c_risk_mgmt",
+    title: "Trading Psychology",
+    description: "Master emotion and discipline — the hardest part of trading.",
+    content: `
+# Trading Psychology
+
+The market will test your emotions. Winners manage theirs.
+
+## Common Emotional Mistakes
+1. **Revenge trading**: losing a trade, then trading too big to recover quickly
+2. **FOMO**: entering trades because others are, not because your setup is valid
+3. **Holding losses**: hoping a losing trade will reverse instead of cutting losses
+4. **Moving stops**: changing your stop-loss after opening (almost always wrong)
+
+## Mental Discipline
+- Stick to your plan: if stop-loss should be here, keep it here
+- Pre-decide your targets: don't move them based on feelings
+- Take breaks after 2 consecutive losses: your mindset is compromised
+- Review losses without judgment: what did the market teach you?
+
+## Winning Traders
+- Follow rules mechanically
+- Accept small losses as cost of business
+- Let winners run but cut losers fast
+- Trade the same size consistently
+
+**Trading psychology separates $100k accounts from $10k accounts.**
+    `,
+    videoUrl: "https://example.com/video/psychology",
+    duration: 12,
+    order: 4,
+    createdAt: "2026-01-17T00:00:00.000Z",
   },
 ];
 
@@ -755,6 +1168,7 @@ export function freshUserData(
     liveChat: [],
     mailbox: [],
     walletSkipped: false,
+    lessonProgress: new Map(),
   };
   return data;
 }
@@ -815,6 +1229,48 @@ export function getUserData(userId: string): UserData {
     userData.set(userId, data);
   }
   return data;
+}
+
+export function applyWalletDebit(
+  data: { wallets: Wallet[]; transactions: Transaction[] },
+  walletId: string | null | undefined,
+  amount: number,
+  description: string,
+  currency: string = "USD",
+): { wallet: Wallet; transaction: Transaction } {
+  const wallet =
+    (walletId ? data.wallets.find((w) => w.id === walletId) : null) ??
+    data.wallets.find((w) => w.type === "main");
+
+  if (!wallet) {
+    throw new Error("No funding wallet available.");
+  }
+  if (wallet.balance < amount) {
+    throw new Error(`Insufficient balance. Needed ${amount}, available ${wallet.balance}.`);
+  }
+
+  wallet.balance = Number((wallet.balance - amount).toFixed(2));
+  const transaction: Transaction = {
+    id: newId("tx"),
+    walletId: wallet.id,
+    type: "fee",
+    amount: -amount,
+    currency,
+    status: "completed",
+    description,
+    createdAt: NOW(),
+  };
+  data.transactions.unshift(transaction);
+
+  return { wallet, transaction };
+}
+
+export function getDemoCourses(): DemoCourse[] {
+  return demoCourses;
+}
+
+export function getDemoLessons(): DemoLesson[] {
+  return demoLessons;
 }
 
 // ---------- Seeded users ----------
